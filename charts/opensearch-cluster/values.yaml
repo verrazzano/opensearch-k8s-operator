@@ -1,0 +1,60 @@
+OpenSearchClusterSpec:
+  general:
+    httpPort: "9200"
+    version: 2.3.0
+#    pluginsList: ["repository-s3"]
+#    additionalVolumes:
+#      - name: my-volume
+#        path: "/usr/share/opensearch/config/config"
+#        secret:
+#          secretName: tls-cert
+  dashboards:
+    enable: true
+    replicas: 1
+    version: 2.3.0
+  nodePools:
+    - component: masters
+      replicas: 3
+      roles:
+      - "master"
+#      labels:
+#        label1: value1
+#      annotations:
+#        annot1: value1
+      persistence:
+        pvc:
+          storageClass: standard
+          accessModes:
+          - ReadWriteOnce
+    - component: nodes
+      replicas: 3
+      resources:
+        requests:
+          memory: "2Gi"
+        limits:
+          memory: "2Gi"
+          cpu: "500m"
+      roles:
+      - data
+      persistence:
+        pvc:
+          storageClass: standard
+          accessModes:
+          - ReadWriteOnce
+  security:
+    config:
+      securityConfigSecret:
+        name: securityconfig-secret
+#      adminSecret:
+#        name: tls-cert
+#    tls:
+#      transport:
+#        generate: false
+#        secret:
+#          name: tls-cert
+#        adminDn: ["CN=my-cluster.default.svc.cluster.local,OU=UNIT,O=ORG,L=TORONTO,ST=ONTARIO,C=CA"]
+#        nodesDn: ["CN=my-cluster.default.svc.cluster.local,OU=UNIT,O=ORG,L=TORONTO,ST=ONTARIO,C=CA"]
+#      http:
+#        generate: false
+#        secret:
+#          name: tls-cert
