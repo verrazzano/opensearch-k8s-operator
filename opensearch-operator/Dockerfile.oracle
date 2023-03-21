@@ -19,8 +19,6 @@ COPY api/ api/
 COPY controllers/ controllers/
 COPY pkg/   pkg/
 COPY opensearch-gateway/   opensearch-gateway/
-RUN mkdir /license
-COPY LICENSE README.md SECURITY.md THIRD_PARTY_LICENSES.txt /license/
 
 # Build
 ARG TARGETOS
@@ -32,6 +30,8 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -a -o manager m
 FROM ghcr.io/oracle/oraclelinux:8-slim
 WORKDIR /
 COPY --from=builder /workspace/manager .
+RUN mkdir /license
+COPY BUILD_FROM_SOURCE_README.md  SECURITY.md THIRD_PARTY_LICENSES.txt /license/
 USER 65532:65532
 
 ENTRYPOINT ["/manager"]
