@@ -189,7 +189,7 @@ spec:
 {{- end }}
 {{- if  $val.roles }}
       roles:
-{{ toYaml $val.roles | indent 8 }}
+{{ toYaml $val.roles | indent 6 }}
 {{ end }}
 {{- if  $val.persistence }}
       persistence:
