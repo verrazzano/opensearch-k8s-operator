@@ -19,6 +19,8 @@ COPY api/ api/
 COPY controllers/ controllers/
 COPY pkg/   pkg/
 COPY opensearch-gateway/   opensearch-gateway/
+RUN mkdir /license
+COPY LICENSE README.md SECURITY.md THIRD_PARTY_LICENSES.txt /license/
 
 # Build
 ARG TARGETOS
