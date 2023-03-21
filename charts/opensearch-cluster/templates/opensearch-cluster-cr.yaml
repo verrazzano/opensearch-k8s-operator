@@ -206,7 +206,7 @@ spec:
 {{  toYaml $val.persistence.pvc.accessModes | indent 10 }}
 {{- end }}
 {{- else if  $val.persistence.emptyDir }}
-        emptyDir: {{  $val.persistence.emptyDir }}
+        emptyDir: {}
 {{- end }}
 {{- end }}
 {{- if $val.additionalConfig }}
