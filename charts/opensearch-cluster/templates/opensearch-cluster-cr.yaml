@@ -205,7 +205,7 @@ spec:
           accessModes:
 {{  toYaml $val.persistence.pvc.accessModes | indent 10 }}
 {{- end }}
-{{- else if  $val.persistence.emptyDir }}
+{{- else if eq (len $val.persistence.emptyDir) 0 }}
         emptyDir: {}
 {{- end }}
 {{- end }}
@@ -243,10 +243,12 @@ spec:
           name: {{ .Values.OpenSearchClusterSpec.security.tls.transport.secret.name }}
 {{- end }}
 {{- if .Values.OpenSearchClusterSpec.security.tls.transport.adminDn }}
-        adminDn: {{ .Values.OpenSearchClusterSpec.security.tls.transport.adminDn  }}
+        adminDn:
+{{ toYaml .Values.OpenSearchClusterSpec.security.tls.transport.adminDn | indent 10  }}
 {{- end }}
 {{- if .Values.OpenSearchClusterSpec.security.tls.transport.nodesDn }}
-        nodesDn: {{ .Values.OpenSearchClusterSpec.security.tls.transport.nodesDn  }}
+        nodesDn:
+{{ toYaml .Values.OpenSearchClusterSpec.security.tls.transport.nodesDn | indent 10 }}
 {{- end }}
 {{- end }}
 {{- if .Values.OpenSearchClusterSpec.security.tls.http }}
