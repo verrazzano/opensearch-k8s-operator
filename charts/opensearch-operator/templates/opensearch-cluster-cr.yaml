@@ -1,8 +1,8 @@
-{{- $cluster_name := .Release.Name }}
+{{- if eq .Values.OpenSearchClusterSpec.enabled true }}
 apiVersion: opensearch.opster.io/v1
 kind: OpenSearchCluster
 metadata:
-  name: {{ $cluster_name }}
+  name: {{ .Values.clusterName | default .Release.Name}}
   namespace: {{ .Release.Namespace }}
 spec:
 {{- if .Values.OpenSearchClusterSpec.bootstrap }}
@@ -48,6 +48,14 @@ spec:
     keystore:
 {{ toYaml .Values.OpenSearchClusterSpec.general.keystore | indent 6 }}
 {{- end }}
+{{- if .Values.OpenSearchClusterSpec.general.securityContext }}
+    securityContext:
+{{ toYaml .Values.OpenSearchClusterSpec.general.securityContext | indent 6}}
+{{- end}}
+{{- if .Values.OpenSearchClusterSpec.general.podSecurityContext }}
+    podSecurityContext:
+{{ toYaml .Values.OpenSearchClusterSpec.general.podSecurityContext | indent 6 }}
+{{- end}}
 {{- if .Values.OpenSearchClusterSpec.general.additionalVolumes }}
     additionalVolumes:
   {{- range $key, $val := .Values.OpenSearchClusterSpec.general.additionalVolumes }}
@@ -132,6 +140,14 @@ spec:
         name: {{ .Values.OpenSearchClusterSpec.dashboards.tls.caSecret.name }}
 {{- end }}
 {{- end }}
+{{- if .Values.OpenSearchClusterSpec.dashboards.securityContext }}
+    securityContext:
+{{ toYaml .Values.OpenSearchClusterSpec.dashboards.securityContext | indent 6 }}
+{{- end}}
+{{- if .Values.OpenSearchClusterSpec.dashboards.podSecurityContext }}
+    podSecurityContext:
+{{ toYaml .Values.OpenSearchClusterSpec.dashboards.podSecurityContext | indent 6}}
+{{- end}}
 {{- if .Values.OpenSearchClusterSpec.dashboards.additionalVolumes }}
     additionalVolumes:
     {{- range $key,$val := .Values.OpenSearchClusterSpec.dashboards.additionalVolumes }}
@@ -269,6 +285,7 @@ spec:
 {{- if .Values.OpenSearchClusterSpec.security.tls.http.secret }}
         secret:
           name: {{ .Values.OpenSearchClusterSpec.security.tls.http.secret.name }}
+{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}
