@@ -1,6 +1,6 @@
 # Build Instructions
 
-The base tag, this release is branched from is `v2.2.1`
+The base tag, this release is branched from is `v2.4.0`
 
 
 Create Environment Variables
@@ -8,7 +8,7 @@ Create Environment Variables
 ```
 export DOCKER_REPO=<Docker Repository>
 export DOCKER_NAMESPACE=<Docker Namespace>
-export DOCKER_TAG=v2.2.1
+export DOCKER_TAG=v2.4.0
 ```
 
 Build and Push Images
