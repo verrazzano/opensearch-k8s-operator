@@ -480,3 +480,19 @@ func GetPodWithOlderRevision(ctx context.Context, k8sClient client.Client, sts *
 	}
 	return nil, nil
 }
+
+// DeleteOSDDeployment deletes the OSD deployment along with all its pods
+func DeleteOSDDeployment(ctx context.Context, k8sClient client.Client, clusterName, clusterNamespace string) error {
+	deploy := appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      clusterName + "-dashboards",
+			Namespace: clusterNamespace,
+		},
+	}
+	opts := client.DeleteOptions{}
+	// Add this so pods of the job are deleted as well, otherwise they would remain as orphaned pods
+	client.PropagationPolicy(metav1.DeletePropagationForeground).ApplyToDelete(&opts)
+	err := k8sClient.Delete(ctx, &deploy, &opts)
+
+	return err
+}
