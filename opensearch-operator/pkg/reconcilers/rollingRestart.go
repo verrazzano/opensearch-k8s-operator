@@ -67,28 +67,26 @@ func (r *RollingRestartReconciler) Reconcile() (ctrl.Result, error) {
 
 	status := r.findStatus()
 	var pendingUpdate bool
-	// Check that all data nodes are ready before doing work
-	// Also check if there are pending updates
+	// Check that all nodes are ready before doing work
+	// Also check if there are pending updates for all nodes.
 	for _, nodePool := range r.instance.Spec.NodePools {
-		if helpers.ContainsString(nodePool.Roles, "data") {
-			sts := &appsv1.StatefulSet{}
-			if err := r.Get(r.ctx, types.NamespacedName{
-				Name:      builders.StsName(r.instance, &nodePool),
-				Namespace: r.instance.Namespace,
-			}, sts); err != nil {
-				return ctrl.Result{}, err
-			}
-			if sts.Status.ReadyReplicas != pointer.Int32Deref(sts.Spec.Replicas, 1) {
-				return ctrl.Result{
-					Requeue:      true,
-					RequeueAfter: 10 * time.Second,
-				}, nil
-			}
-
-			if sts.Status.UpdateRevision != "" &&
-				sts.Status.UpdatedReplicas != pointer.Int32Deref(sts.Spec.Replicas, 1) {
-				pendingUpdate = true
-			}
+		sts := &appsv1.StatefulSet{}
+		if err := r.Get(r.ctx, types.NamespacedName{
+			Name:      builders.StsName(r.instance, &nodePool),
+			Namespace: r.instance.Namespace,
+		}, sts); err != nil {
+			return ctrl.Result{}, err
+		}
+		if sts.Status.UpdateRevision != "" &&
+			sts.Status.UpdatedReplicas != pointer.Int32Deref(sts.Spec.Replicas, 1) {
+			pendingUpdate = true
+			break
+		}
+		if sts.Status.ReadyReplicas != pointer.Int32Deref(sts.Spec.Replicas, 1) {
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: 10 * time.Second,
+			}, nil
 		}
 	}
 
