@@ -203,6 +203,7 @@ func DiffSlice(leftSlice, rightSlice []string) []string {
 // Count the number of pods running and ready and not terminating for a given nodePool
 func CountRunningPodsForNodePool(ctx context.Context, k8sClient client.Client, cr *opsterv1.OpenSearchCluster, nodePool *opsterv1.NodePool) (int, error) {
 	// Constrict selector from labels
+	fmt.Println("count")
 	clusterReq, err := labels.NewRequirement(ClusterLabel, selection.Equals, []string{cr.ObjectMeta.Name})
 	if err != nil {
 		return 0, err
@@ -431,24 +432,58 @@ func ReplicaHostName(currentSts appsv1.StatefulSet, repNum int32) string {
 func WorkingPodForRollingRestart(ctx context.Context, k8sClient client.Client, sts *appsv1.StatefulSet) (string, error) {
 	replicas := lo.FromPtrOr(sts.Spec.Replicas, 1)
 	// Handle the simple case
-	if replicas == sts.Status.UpdatedReplicas+sts.Status.CurrentReplicas {
+	if sts.Status.UpdatedReplicas < lo.FromPtrOr(sts.Spec.Replicas, 1) && replicas == sts.Status.UpdatedReplicas+sts.Status.CurrentReplicas {
 		ordinal := replicas - 1 - sts.Status.UpdatedReplicas
 		return ReplicaHostName(*sts, ordinal), nil
 	}
 	// If there are potentially mixed revisions we need to check each pod
-	for i := replicas - 1; i >= 0; i-- {
+	podWithOlderRevision, err := GetPodWithOlderRevision(ctx, k8sClient, sts)
+	if err != nil {
+		return "", err
+	}
+	if podWithOlderRevision != nil {
+		return podWithOlderRevision.Name, nil
+	}
+	return "", errors.New("unable to calculate the working pod for rolling restart")
+}
+
+// DeleteStuckPodWithOlderRevision deletes the crashed pod only if there is any update in StatefulSet.
+func DeleteStuckPodWithOlderRevision(ctx context.Context, k8sClient client.Client, sts *appsv1.StatefulSet) error {
+	podWithOlderRevision, err := GetPodWithOlderRevision(ctx, k8sClient, sts)
+	if err != nil {
+		return err
+	}
+	if podWithOlderRevision != nil {
+		for _, container := range podWithOlderRevision.Status.ContainerStatuses {
+			// If any container is getting crashed, restart it by deleting the pod so that new update in sts can take place.
+			if !container.Ready && container.State.Waiting != nil && container.State.Waiting.Reason == "CrashLoopBackOff" {
+				return k8sClient.Delete(ctx, &corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      podWithOlderRevision.Name,
+						Namespace: sts.Namespace,
+					},
+				})
+			}
+		}
+	}
+	return nil
+}
+
+// GetPodWithOlderRevision fetches the pod that is not having the updated revision.
+func GetPodWithOlderRevision(ctx context.Context, k8sClient client.Client, sts *appsv1.StatefulSet) (*corev1.Pod, error) {
+	for i := lo.FromPtrOr(sts.Spec.Replicas, 1) - 1; i >= 0; i-- {
 		podName := ReplicaHostName(*sts, i)
 		pod := &corev1.Pod{}
 		if err := k8sClient.Get(ctx, types.NamespacedName{Name: podName, Namespace: sts.Namespace}, pod); err != nil {
-			return "", err
+			return nil, err
 		}
 		podRevision, ok := pod.Labels[stsRevisionLabel]
 		if !ok {
-			return "", fmt.Errorf("pod %s has no revision label", podName)
+			return nil, fmt.Errorf("pod %s has no revision label", podName)
 		}
 		if podRevision != sts.Status.UpdateRevision {
-			return podName, nil
+			return pod, nil
 		}
 	}
-	return "", errors.New("unable to calculate the working pod for rolling restart")
+	return nil, nil
 }
