@@ -124,18 +124,16 @@ func (r *RollingRestartReconciler) Reconcile() (ctrl.Result, error) {
 
 	// Restart statefulset pod.  Order is not important so we just pick the first we find
 	for _, nodePool := range r.instance.Spec.NodePools {
-		if helpers.ContainsString(nodePool.Roles, "data") {
-			sts := &appsv1.StatefulSet{}
-			if err := r.Get(r.ctx, types.NamespacedName{
-				Name:      builders.StsName(r.instance, &nodePool),
-				Namespace: r.instance.Namespace,
-			}, sts); err != nil {
-				return ctrl.Result{}, err
-			}
-			if sts.Status.UpdateRevision != "" &&
-				sts.Status.UpdatedReplicas != pointer.Int32Deref(sts.Spec.Replicas, 1) {
-				return r.restartStatefulSetPod(sts)
-			}
+		sts := &appsv1.StatefulSet{}
+		if err := r.Get(r.ctx, types.NamespacedName{
+			Name:      builders.StsName(r.instance, &nodePool),
+			Namespace: r.instance.Namespace,
+		}, sts); err != nil {
+			return ctrl.Result{}, err
+		}
+		if sts.Status.UpdateRevision != "" &&
+			sts.Status.UpdatedReplicas != pointer.Int32Deref(sts.Spec.Replicas, 1) {
+			return r.restartStatefulSetPod(sts)
 		}
 	}
 
