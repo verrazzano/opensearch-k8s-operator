@@ -1,10 +1,6 @@
 # Build the manager binary
 FROM  ghcr.io/verrazzano/golang:v1.20.10 as builder
 
-RUN microdnf update -y \
-    && microdnf -y install golang \
-    && microdnf clean all
-
 WORKDIR /workspace
 # Copy the Go Modules manifests
 COPY go.mod go.mod
