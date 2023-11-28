@@ -1,9 +1,5 @@
 # Build the manager binary
-FROM  ghcr.io/oracle/oraclelinux:8-slim as builder
-
-RUN microdnf update -y \
-    && microdnf -y install golang \
-    && microdnf clean all
+FROM  ghcr.io/verrazzano/golang:v1.20.10 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests
